@@ -1,0 +1,109 @@
+package com.rpg.springCat.service;
+
+import com.rpg.springCat.model.MyUser;
+import com.rpg.springCat.model.Task;
+import com.rpg.springCat.repository.TaskRepository;
+import com.rpg.springCat.repository.CharacterRepository;
+import com.rpg.springCat.repository.MetricsRepository;
+import com.rpg.springCat.repository.MyUserRepository;
+import lombok.AllArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Objects;
+
+@Service
+@AllArgsConstructor
+public class TasksService {
+
+    private final TaskRepository taskRepository;
+    private final CharacterRepository characterRepository;
+    private final MetricsRepository metricsRepository;
+    private final MyUserRepository userRepository;
+
+    // 🔥 теперь только свои задачи
+    public List<Task> findAllTasks(Authentication auth) {
+        return taskRepository.findByUserUsername(auth.getName());
+    }
+
+    // 🔥 сохраняем с пользователем
+    public Task saveTask(Task task, Authentication auth) {
+        MyUser user = userRepository.findByUsername(auth.getName())
+                .orElseThrow();
+
+        task.setUser(user);
+        task.setIsComplete(false);
+
+        return taskRepository.save(task);
+    }
+
+    // 🔥 только своя задача
+    public Task findById(Long taskId, Authentication auth) {
+        return taskRepository.findByTaskIdAndUserUsername(taskId, auth.getName())
+                .orElse(null);
+    }
+
+    public Task updateTask(Task task, Authentication auth) {
+        Task existingTask = taskRepository
+                .findByTaskIdAndUserUsername(task.getTaskId(), auth.getName())
+                .orElse(null);
+
+        if (existingTask == null) {
+            return null;
+        }
+
+        // ✅ Проверяем переход: false -> true (НЕ ТРОГАЕМ)
+        boolean wasIncomplete = Boolean.FALSE.equals(existingTask.getIsComplete());
+        boolean nowComplete = Boolean.TRUE.equals(task.getIsComplete());
+
+        if (wasIncomplete && nowComplete) {
+
+            // 🎮 XP персонажу
+            var character = characterRepository.findAll()
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+
+            if (character != null) {
+                character.setXp(character.getXp() + 25);
+                characterRepository.save(character);
+            }
+
+            // 📊 Метрики
+            var metrics = metricsRepository.findAll()
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+
+            if (metrics != null) {
+                metrics.setCount(metrics.getCount() + 1);
+
+                if (metrics.getLastUpdate().equals(LocalDate.now().minusDays(1))) {
+                    metrics.setStreak(metrics.getStreak() + 1);
+                } else if (!Objects.equals(metrics.getLastUpdate(), LocalDate.now())) {
+                    metrics.setStreak(1);
+                }
+
+                metrics.setLastUpdate(LocalDate.now());
+
+                metricsRepository.save(metrics);
+            }
+        }
+
+        // 🔥 сохраняем владельца (важно!)
+        task.setUser(existingTask.getUser());
+
+        return taskRepository.save(task);
+    }
+
+    // 🔥 удаление только своей задачи
+    public void deleteTask(Long taskId, Authentication auth) {
+        Task task = taskRepository
+                .findByTaskIdAndUserUsername(taskId, auth.getName())
+                .orElseThrow(() -> new RuntimeException("Not your task"));
+
+        taskRepository.delete(task);
+    }
+}

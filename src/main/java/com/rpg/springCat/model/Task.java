@@ -1,0 +1,27 @@
+package com.rpg.springCat.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name= "tasks")
+public class Task {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long taskId;
+
+    private String taskName;
+    private String description;
+    private Integer time;
+    private Boolean isComplete;
+
+    // 🔥 ВАЖНО: связь с пользователем
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private MyUser user;
+}
