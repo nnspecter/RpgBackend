@@ -1,5 +1,6 @@
 package com.rpg.springCat.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,6 +25,6 @@ public class Task {
     // 🔥 связь с пользователем
     @ManyToOne
     @JoinColumn(name = "user_id")
-    @JsonIgnoreProperties({"password", "tasks"}) // 🔥 фикс
+    @JsonIgnore
     private MyUser user;
 }
