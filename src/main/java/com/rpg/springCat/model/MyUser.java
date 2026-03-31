@@ -1,12 +1,16 @@
 package com.rpg.springCat.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
 import java.util.List;
 
-@Entity
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
 @Table(name = "users")
 public class MyUser {
 
@@ -19,6 +23,8 @@ public class MyUser {
 
     private String password;
 
+    // 🔥 предотвращает рекурсию
     @OneToMany(mappedBy = "user")
+    @JsonIgnore
     private List<Task> tasks;
 }

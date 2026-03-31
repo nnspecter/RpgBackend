@@ -8,7 +8,6 @@ import java.util.Optional;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
-    // 🔥 только задачи текущего пользователя
     List<Task> findByUserUsername(String username);
 
     Optional<Task> findByTaskIdAndUserUsername(Long taskId, String username);
