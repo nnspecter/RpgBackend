@@ -1,5 +1,6 @@
 package com.rpg.springCat.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,5 +22,6 @@ public class Character {
     // 🔥 привязка к пользователю
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnore
     private MyUser user;
 }

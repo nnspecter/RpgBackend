@@ -21,21 +21,7 @@ public class MetricsService {
     public Metrics findMetrics(Authentication auth) {
 
         return repository.findFirstByUserUsername(auth.getName())
-                .orElseGet(() -> {
-
-                    MyUser user = userRepository.findByUsername(auth.getName())
-                            .orElseThrow();
-
-                    // логика та же
-                    Metrics metrics = Metrics.builder()
-                            .count(0)
-                            .streak(0)
-                            .lastUpdate(LocalDate.now().minusDays(2))
-                            .user(user) // 🔥 важно
-                            .build();
-
-                    return repository.save(metrics);
-                });
+                .orElseThrow(() -> new RuntimeException("Metrics not found"));
     }
 
     public Metrics saveMetrics(Metrics metrics, Authentication auth) {
