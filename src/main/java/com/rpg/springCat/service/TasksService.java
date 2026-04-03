@@ -54,48 +54,60 @@ public class TasksService {
             return null;
         }
 
-        // ✅ Проверяем переход: false -> true (НЕ ТРОГАЕМ)
-        boolean wasIncomplete = Boolean.FALSE.equals(existingTask.getIsComplete());
-        boolean nowComplete = Boolean.TRUE.equals(task.getIsComplete());
-
-        if (wasIncomplete && nowComplete) {
-
-            // 🎮 XP персонажу
-            var character = characterRepository.findAll()
-                    .stream()
-                    .findFirst()
-                    .orElse(null);
-
-            if (character != null) {
-                character.setXp(character.getXp() + 25);
-                characterRepository.save(character);
-            }
-
-            // 📊 Метрики
-            var metrics = metricsRepository.findAll()
-                    .stream()
-                    .findFirst()
-                    .orElse(null);
-
-            if (metrics != null) {
-                metrics.setCount(metrics.getCount() + 1);
-
-                if (metrics.getLastUpdate().equals(LocalDate.now().minusDays(1))) {
-                    metrics.setStreak(metrics.getStreak() + 1);
-                } else if (!Objects.equals(metrics.getLastUpdate(), LocalDate.now())) {
-                    metrics.setStreak(1);
-                }
-
-                metrics.setLastUpdate(LocalDate.now());
-
-                metricsRepository.save(metrics);
-            }
+        // ✅ Частичное обновление — меняем только непустые поля
+        if (task.getTaskName() != null) {
+            existingTask.setTaskName(task.getTaskName());
+        }
+        if (task.getDescription() != null) {
+            existingTask.setDescription(task.getDescription());
+        }
+        if (task.getTime() != null) {
+            existingTask.setTime(task.getTime());
         }
 
-        // 🔥 сохраняем владельца (важно!)
-        task.setUser(existingTask.getUser());
+        // isComplete обрабатываем отдельно (может быть намеренно передан)
+        if (task.getIsComplete() != null) {
+            boolean wasIncomplete = Boolean.FALSE.equals(existingTask.getIsComplete());
+            boolean nowComplete = Boolean.TRUE.equals(task.getIsComplete());
 
-        return taskRepository.save(task);
+            if (wasIncomplete && nowComplete) {
+
+                // 🎮 XP персонажу
+                var character = characterRepository.findAll()
+                        .stream()
+                        .findFirst()
+                        .orElse(null);
+
+                if (character != null) {
+                    character.setXp(character.getXp() + 25);
+                    characterRepository.save(character);
+                }
+
+                // 📊 Метрики
+                var metrics = metricsRepository.findAll()
+                        .stream()
+                        .findFirst()
+                        .orElse(null);
+
+                if (metrics != null) {
+                    metrics.setCount(metrics.getCount() + 1);
+
+                    if (metrics.getLastUpdate().equals(LocalDate.now().minusDays(1))) {
+                        metrics.setStreak(metrics.getStreak() + 1);
+                    } else if (!Objects.equals(metrics.getLastUpdate(), LocalDate.now())) {
+                        metrics.setStreak(1);
+                    }
+
+                    metrics.setLastUpdate(LocalDate.now());
+                    metricsRepository.save(metrics);
+                }
+            }
+
+            existingTask.setIsComplete(task.getIsComplete());
+        }
+
+        // 🔥 владелец уже в existingTask, просто сохраняем его
+        return taskRepository.save(existingTask);
     }
 
     // 🔥 удаление только своей задачи
