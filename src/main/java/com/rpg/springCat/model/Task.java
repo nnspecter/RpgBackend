@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -22,7 +24,8 @@ public class Task {
     private Integer time;
     private Boolean isComplete;
 
-    // 🔥 связь с пользователем
+    private LocalDate lastResetDate; // 🆕 дата последнего сброса
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     @JsonIgnore
