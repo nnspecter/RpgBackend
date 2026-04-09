@@ -23,12 +23,27 @@ public class TasksService {
     private final MetricsRepository metricsRepository;
     private final MyUserRepository userRepository;
 
-    // 🔥 теперь только свои задачи
     public List<Task> findAllTasks(Authentication auth) {
-        return taskRepository.findByUserUsername(auth.getName());
+        List<Task> tasks = taskRepository.findByUserUsername(auth.getName());
+        LocalDate today = LocalDate.now();
+
+        List<Task> tasksToReset = tasks.stream()
+                .filter(task -> Boolean.TRUE.equals(task.getIsComplete())
+                        && !today.equals(task.getLastResetDate()))
+                .toList();
+
+        if (!tasksToReset.isEmpty()) {
+            tasksToReset.forEach(task -> {
+                task.setIsComplete(false);
+                task.setLastResetDate(today);
+            });
+            taskRepository.saveAll(tasksToReset);
+        }
+
+        return tasks;
     }
 
-    // 🔥 сохраняем с пользователем
+
     public Task saveTask(Task task, Authentication auth) {
         MyUser user = userRepository.findByUsername(auth.getName())
                 .orElseThrow();
@@ -39,7 +54,7 @@ public class TasksService {
         return taskRepository.save(task);
     }
 
-    // 🔥 только своя задача
+
     public Task findById(Long taskId, Authentication auth) {
         return taskRepository.findByTaskIdAndUserUsername(taskId, auth.getName())
                 .orElse(null);
@@ -54,7 +69,6 @@ public class TasksService {
             return null;
         }
 
-        // ✅ Частичное обновление — меняем только непустые поля
         if (task.getTaskName() != null) {
             existingTask.setTaskName(task.getTaskName());
         }
